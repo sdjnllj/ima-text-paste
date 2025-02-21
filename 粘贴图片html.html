@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PS选区粘贴工具</title>
+    <style>
+        body {
+            margin: 20px;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        #container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            display: inline-block;
+            padding: 10px 20px;
+            text-decoration: none;
+            color: #333;
+            background-color: white;
+            border-radius: 5px;
+            margin: 0 10px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+        .nav a:hover {
+            background-color: #eee;
+        }
+        #pasteArea {
+            min-height: 300px;
+            border: 2px dashed #999;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            background-color: white;
+        }
+        img {
+            max-width: 100%;
+            max-height: 70vh;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div class="nav">
+            <a href="粘贴文本.html">文本粘贴</a>
+            <a href="粘贴图片html.html">图片粘贴</a>
+        </div>
+        <h1>PS选区粘贴工具</h1>
+        <div id="pasteArea">
+            <p>操作步骤：</p>
+            <p>1. 在PS中使用选区工具选择区域</p>
+            <p>2. 按 Ctrl+C 复制选区</p>
+            <p>3. 回到此页面按 Ctrl+V 粘贴</p>
+        </div>
+        <div id="preview"></div>
+    </div>
+
+    <script>
+        // 处理粘贴事件
+        window.addEventListener('paste', async (e) => {
+            e.preventDefault();
+            
+            // 获取剪贴板数据
+            const items = (e.clipboardData || window.clipboardData).items;
+            
+            // 查找图像数据
+            for (const item of items) {
+               if (item.type.indexOf('image') === 0) {
+                    const blob = item.getAsFile();
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        // 创建图片元素
+                        const img = new Image();
+                        img.src = event.target.result;
+                        
+                        // 清空预览区并显示图片
+                        const preview = document.getElementById('preview');
+                        preview.innerHTML = '';
+                        preview.appendChild(img);
+                        
+                        // 更新粘贴区域样式
+                        document.getElementById('pasteArea').style.minHeight = 'auto';
+                    };
+                    
+                    reader.readAsDataURL(blob);
+                    break;
+                }
+            }
+        });
+
+        // 初始化提示
+        document.addEventListener('DOMContentLoaded', () => {
+            // 支持现代剪贴板API的浏览器
+            if (!navigator.clipboard) {
+                alert('建议使用最新版Chrome/Firefox/Edge浏览器以获得最佳体验');
+            }
+        });
+    </script>
+</body>
+</html>
