@@ -3,44 +3,103 @@
 <head>
     <title>PS选区粘贴工具</title>
     <style>
+        :root {
+            --bg-color: #f0f0f0;
+            --text-color: #333;
+            --container-bg: white;
+            --border-color: #ccc;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #e0e0e0;
+            --container-bg: #2d2d2d;
+            --border-color: #404040;
+        }
+
         body {
             margin: 20px;
-            background-color: #f0f0f0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             font-family: Arial, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
         }
+
         #container {
             max-width: 800px;
             margin: 0 auto;
             text-align: center;
         }
+
         .nav {
             margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
         }
+
         .nav a {
             display: inline-block;
             padding: 10px 20px;
             text-decoration: none;
-            color: #333;
-            background-color: white;
+            color: var(--text-color);
+            background-color: var(--container-bg);
             border-radius: 5px;
-            margin: 0 10px;
             box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
         }
+
         .nav a:hover {
-            background-color: #eee;
+            background-color: var(--border-color);
         }
+
         #pasteArea {
             min-height: 300px;
-            border: 2px dashed #999;
+            border: 2px dashed var(--border-color);
             border-radius: 10px;
             padding: 20px;
             margin: 20px 0;
-            background-color: white;
+            background-color: var(--container-bg);
         }
+
         img {
             max-width: 100%;
             max-height: 70vh;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--container-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: var(--border-color);
+        }
+
+        @media (max-width: 600px) {
+            #pasteArea {
+                margin: 10px;
+                padding: 10px;
+            }
+            .controls {
+                padding: 0 10px;
+            }
         }
     </style>
 </head>
@@ -51,6 +110,13 @@
             <a href="粘贴图片html.html">图片粘贴</a>
         </div>
         <h1>PS选区粘贴工具</h1>
+        <div class="controls">
+            <button onclick="toggleTheme()">切换深色模式</button>
+            <button onclick="rotateImage(90)">向右旋转</button>
+            <button onclick="rotateImage(-90)">向左旋转</button>
+            <button onclick="scaleImage(1.1)">放大</button>
+            <button onclick="scaleImage(0.9)">缩小</button>
+        </div>
         <div id="pasteArea">
             <p>操作步骤：</p>
             <p>1. 在PS中使用选区工具选择区域</p>
@@ -61,6 +127,9 @@
     </div>
 
     <script>
+        let currentRotation = 0;
+        let currentScale = 1;
+
         // 处理粘贴事件
         window.addEventListener('paste', async (e) => {
             e.preventDefault();
@@ -78,6 +147,7 @@
                         // 创建图片元素
                         const img = new Image();
                         img.src = event.target.result;
+                        img.id = 'pastedImage';
                         
                         // 清空预览区并显示图片
                         const preview = document.getElementById('preview');
@@ -86,6 +156,11 @@
                         
                         // 更新粘贴区域样式
                         document.getElementById('pasteArea').style.minHeight = 'auto';
+
+                        // 重置变换
+                        currentRotation = 0;
+                        currentScale = 1;
+                        updateImageTransform();
                     };
                     
                     reader.readAsDataURL(blob);
@@ -94,8 +169,50 @@
             }
         });
 
-        // 初始化提示
+        // 旋转图片
+        function rotateImage(degrees) {
+            const img = document.getElementById('pastedImage');
+            if (img) {
+                currentRotation = (currentRotation + degrees) % 360;
+                updateImageTransform();
+            }
+        }
+
+        // 缩放图片
+        function scaleImage(factor) {
+            const img = document.getElementById('pastedImage');
+            if (img) {
+                currentScale *= factor;
+                // 限制缩放范围
+                currentScale = Math.max(0.5, Math.min(2, currentScale));
+                updateImageTransform();
+            }
+        }
+
+        // 更新图片变换
+        function updateImageTransform() {
+            const img = document.getElementById('pastedImage');
+            if (img) {
+                img.style.transform = `rotate(${currentRotation}deg) scale(${currentScale})`;
+            }
+        }
+
+        // 主题切换
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? '' : 'dark';
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // 初始化主题
         document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+
             // 支持现代剪贴板API的浏览器
             if (!navigator.clipboard) {
                 alert('建议使用最新版Chrome/Firefox/Edge浏览器以获得最佳体验');
