@@ -2,6 +2,10 @@
 
 一个简单的网页工具，支持图片和文本的粘贴功能。
 
+## 项目地址
+
+GitHub仓库：https://github.com/sdjnllj/ima-text-paste
+
 ## 功能特点
 
 - 文本粘贴：支持快速粘贴和编辑文本内容
