@@ -63,11 +63,40 @@
             background-color: var(--container-bg);
         }
 
-        img {
+        .image-container {
+            position: relative;
+            display: inline-block;
+            margin: 10px;
+            margin-bottom: 60px;
+            max-width: 100%;
+            padding-bottom: 20px;
+            padding-right: 0; /* 移除右侧内边距，使删除按钮能够与容器右对齐 */
+        }
+
+        .image-container img {
             max-width: 100%;
             max-height: 70vh;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             transition: transform 0.3s;
+        }
+
+        .delete-btn {
+            position: absolute;
+            bottom: -45px;
+            right: 0; /* 修改为0使按钮与容器右对齐 */
+            background-color: rgba(255, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            z-index: 1;
+            transition: background-color 0.3s;
+        }
+
+        .delete-btn:hover {
+            background-color: rgba(255, 0, 0, 0.9);
         }
 
         .controls {
@@ -144,15 +173,30 @@
                     const reader = new FileReader();
                     
                     reader.onload = function(event) {
+                        // 创建图片容器
+                        const imageContainer = document.createElement('div');
+                        imageContainer.className = 'image-container';
+                        
                         // 创建图片元素
                         const img = new Image();
                         img.src = event.target.result;
-                        img.id = 'pastedImage';
                         
-                        // 清空预览区并显示图片
+                        // 创建删除按钮
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = '删除';
+                        deleteBtn.className = 'delete-btn';
+                        deleteBtn.onclick = function() {
+                            imageContainer.remove();
+                            saveImagesToLocal(); // 删除后更新存储
+                        };
+                        
+                        // 将图片和删除按钮添加到容器中
+                        imageContainer.appendChild(img);
+                        imageContainer.appendChild(deleteBtn);
+                        
+                        // 添加到预览区域
                         const preview = document.getElementById('preview');
-                        preview.innerHTML = '';
-                        preview.appendChild(img);
+                        preview.insertBefore(imageContainer, preview.firstChild);
                         
                         // 更新粘贴区域样式
                         document.getElementById('pasteArea').style.minHeight = 'auto';
@@ -161,6 +205,9 @@
                         currentRotation = 0;
                         currentScale = 1;
                         updateImageTransform();
+
+                        // 保存到本地存储
+                        saveImagesToLocal();
                     };
                     
                     reader.readAsDataURL(blob);
@@ -168,6 +215,50 @@
                 }
             }
         });
+
+        // 保存图片到本地存储
+        function saveImagesToLocal() {
+            const preview = document.getElementById('preview');
+            const images = Array.from(preview.getElementsByTagName('img')).map(img => {
+                return {
+                    src: img.src,
+                    timestamp: new Date().toISOString()
+                };
+            });
+            localStorage.setItem('savedImages', JSON.stringify(images));
+        }
+
+        // 从本地存储恢复图片
+        function restoreImages() {
+            const savedImages = JSON.parse(localStorage.getItem('savedImages') || '[]');
+            const preview = document.getElementById('preview');
+            preview.innerHTML = ''; // 清空现有内容
+
+            savedImages.forEach(imageData => {
+                const imageContainer = document.createElement('div');
+                imageContainer.className = 'image-container';
+
+                const img = new Image();
+                img.src = imageData.src;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '删除';
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.onclick = function() {
+                    imageContainer.remove();
+                    saveImagesToLocal();
+                };
+
+                imageContainer.appendChild(img);
+                imageContainer.appendChild(deleteBtn);
+                preview.appendChild(imageContainer);
+            });
+
+            // 如果有图片，更新粘贴区域样式
+            if (savedImages.length > 0) {
+                document.getElementById('pasteArea').style.minHeight = 'auto';
+            }
+        }
 
         // 旋转图片
         function rotateImage(degrees) {
@@ -212,6 +303,9 @@
             if (savedTheme) {
                 document.documentElement.setAttribute('data-theme', savedTheme);
             }
+
+            // 恢复保存的图片
+            restoreImages();
 
             // 支持现代剪贴板API的浏览器
             if (!navigator.clipboard) {

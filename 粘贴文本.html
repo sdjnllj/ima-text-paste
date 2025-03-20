@@ -57,16 +57,47 @@
             background-color: var(--border-color);
         }
 
-        textarea {
+        .text-container {
+            position: relative;
             width: 80%;
-            height: 300px;
+            margin: 20px auto;
+            margin-bottom: 60px;
             padding: 10px;
-            margin-top: 20px;
             border: 1px solid var(--border-color);
             border-radius: 5px;
-            resize: vertical;
             background-color: var(--container-bg);
             color: var(--text-color);
+            box-sizing: border-box;
+        }
+
+        .text-content {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            word-break: break-all;
+            overflow-wrap: break-word;
+            box-sizing: border-box;
+        }
+
+        .delete-btn {
+            position: absolute;
+            bottom: -45px;
+            right: 0; /* 修改为0使按钮与容器右对齐 */
+            background-color: rgba(255, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .delete-btn:hover {
+            background-color: rgba(255, 0, 0, 0.9);
         }
 
         .controls {
@@ -125,11 +156,87 @@
             <button onclick="saveToLocal()">保存到本地</button>
             <button onclick="loadFromLocal()">加载历史</button>
         </div>
-        <textarea id="textInput" placeholder="请在此粘贴您的文本..."></textarea>
+        <div id="textBlocks"></div>
         <div id="formatResult"></div>
     </div>
 
     <script>
+        // 处理粘贴事件
+        window.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text');
+            if (text) {
+                // 创建新的文本块容器
+                const container = document.createElement('div');
+                container.className = 'text-container';
+
+                // 创建文本内容元素
+                const content = document.createElement('div');
+                content.className = 'text-content';
+                content.textContent = text;
+
+                // 创建删除按钮
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '删除';
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.onclick = function() {
+                    container.remove();
+                    saveTextBlocksToLocal(); // 删除后更新存储
+                };
+
+                // 组装文本块
+                container.appendChild(content);
+                container.appendChild(deleteBtn);
+
+                // 添加到文本块区域
+                const textBlocks = document.getElementById('textBlocks');
+                textBlocks.insertBefore(container, textBlocks.firstChild);
+                
+                // 保存到本地存储
+                saveTextBlocksToLocal();
+            }
+        });
+
+        // 保存文本块到本地存储
+        function saveTextBlocksToLocal() {
+            const textBlocks = document.getElementById('textBlocks');
+            const blocks = Array.from(textBlocks.getElementsByClassName('text-container')).map(container => {
+                return {
+                    text: container.querySelector('.text-content').textContent,
+                    timestamp: new Date().toISOString()
+                };
+            });
+            localStorage.setItem('savedTextBlocks', JSON.stringify(blocks));
+        }
+
+        // 从本地存储恢复文本块
+        function restoreTextBlocks() {
+            const savedBlocks = JSON.parse(localStorage.getItem('savedTextBlocks') || '[]');
+            const textBlocks = document.getElementById('textBlocks');
+            textBlocks.innerHTML = ''; // 清空现有内容
+
+            savedBlocks.forEach(block => {
+                const container = document.createElement('div');
+                container.className = 'text-container';
+
+                const content = document.createElement('div');
+                content.className = 'text-content';
+                content.textContent = block.text;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '删除';
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.onclick = function() {
+                    container.remove();
+                    saveTextBlocksToLocal();
+                };
+
+                container.appendChild(content);
+                container.appendChild(deleteBtn);
+                textBlocks.appendChild(container);
+            });
+        }
+
         // 主题切换
         function toggleTheme() {
             const html = document.documentElement;
@@ -193,6 +300,8 @@
             if (savedTheme) {
                 document.documentElement.setAttribute('data-theme', savedTheme);
             }
+            // 恢复保存的文本块
+            restoreTextBlocks();
         });
     </script>
 </body>
