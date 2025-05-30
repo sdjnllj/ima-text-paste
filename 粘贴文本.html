@@ -220,7 +220,7 @@
             const textBlocks = document.getElementById('textBlocks');
             const blocks = Array.from(textBlocks.getElementsByClassName('text-container')).map(container => {
                 return {
-                    text: container.querySelector('.text-content').textContent,
+                    text: container.querySelector('.text-content').innerHTML,
                     timestamp: new Date().toISOString()
                 };
             });
@@ -245,7 +245,7 @@
 
                 const content = document.createElement('div');
                 content.className = 'text-content';
-                content.textContent = block.text;
+                content.innerHTML = block.text;
                 content.contentEditable = true; // 使文本内容可编辑
 
                 // 监听文本内容变化
